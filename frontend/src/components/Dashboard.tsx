@@ -5,9 +5,11 @@ import { usePropertyStore } from '../store/propertyStore';
 import { PropertyList } from './properties/PropertyList';
 import { PropertyForm } from './properties/PropertyForm';
 import { Modal } from './ui/Modal';
+import { useNavigate } from 'react-router-dom';
 
 export function Dashboard() {
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
   const {
     properties,
     fetchProperties,
@@ -83,11 +85,6 @@ export function Dashboard() {
     setEditingProperty(null);
   };
 
-  const handlePropertyClick = (property: any) => {
-    setSelectedProperty(property);
-    // TODO: Navigate to property details page
-    console.log('Property clicked:', property);
-  };
 
   if (showPropertyList) {
     return (
@@ -138,7 +135,6 @@ export function Dashboard() {
 
           <PropertyList
             properties={properties}
-            onPropertyClick={handlePropertyClick}
             onAddProperty={handleAddProperty}
             onEditProperty={handleEditProperty}
             onDeleteProperty={handleDeleteProperty}
@@ -409,7 +405,7 @@ export function Dashboard() {
 
                       {/* Property Details */}
                       <div
-                        onClick={() => handlePropertyClick(property)}
+                        onClick={() => navigate(`/properties/${property.id}`)}
                         className="p-6 cursor-pointer"
                       >
                         <div className="mb-4">

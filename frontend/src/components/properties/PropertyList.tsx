@@ -1,5 +1,6 @@
 // src/components/properties/PropertyList.tsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface Property {
   id: number;
@@ -18,16 +19,21 @@ interface Property {
 
 interface PropertyListProps {
   properties: Property[];
-  onPropertyClick?: (property: Property) => void;
   onAddProperty?: () => void;
   onEditProperty?: (property: Property) => void;
   onDeleteProperty?: (property: Property) => void;
 }
 
-export function PropertyList({ properties, onPropertyClick, onAddProperty, onEditProperty, onDeleteProperty }: PropertyListProps) {
+export function PropertyList({ properties, onAddProperty, onEditProperty, onDeleteProperty }: PropertyListProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'name' | 'value' | 'cash_flow' | 'cap_rate'>('name');
   const [filterType, setFilterType] = useState<string>('all');
+  const navigate = useNavigate();
+
+  // Navigation handler for property clicks
+  const handlePropertyClick = (property: Property) => {
+    navigate(`/properties/${property.id}`);
+  };
 
   const getPropertyTypeLabel = (type: string) => {
     const labels = {
@@ -182,7 +188,7 @@ export function PropertyList({ properties, onPropertyClick, onAddProperty, onEdi
               className="group bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-200/50 hover:shadow-md hover:border-blue-200 transition-all duration-300 cursor-pointer relative"
             >
               {/* Action Buttons */}
-              <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -212,7 +218,7 @@ export function PropertyList({ properties, onPropertyClick, onAddProperty, onEdi
               </div>
 
               <div
-                onClick={() => onPropertyClick?.(property)}
+                onClick={() => handlePropertyClick(property)}
                 className="pr-20"
               >
                 <div className="flex justify-between items-start mb-4">
@@ -262,9 +268,12 @@ export function PropertyList({ properties, onPropertyClick, onAddProperty, onEdi
                     <span className="text-sm text-gray-500">
                       {property.is_primary_residence ? 'Primary Residence' : 'Investment Property'}
                     </span>
-                    <svg className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                    <div className="flex items-center text-blue-600 font-medium text-sm">
+                      <span>View Details</span>
+                      <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -290,12 +299,12 @@ export function PropertyList({ properties, onPropertyClick, onAddProperty, onEdi
                 {sortedAndFilteredProperties.map((property) => (
                   <tr
                     key={property.id}
-                    onClick={() => onPropertyClick?.(property)}
+                    onClick={() => handlePropertyClick(property)}
                     className="hover:bg-blue-50/50 cursor-pointer transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div>
-                        <div className="font-medium text-gray-900">{property.name}</div>
+                        <div className="font-medium text-gray-900 hover:text-blue-600 transition-colors">{property.name}</div>
                         <div className="text-sm text-gray-500">{property.address}</div>
                       </div>
                     </td>
@@ -343,7 +352,7 @@ export function PropertyList({ properties, onPropertyClick, onAddProperty, onEdi
                         >
                           <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
+          </svg>
                         </button>
                       </div>
                     </td>
