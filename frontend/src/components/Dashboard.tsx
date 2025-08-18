@@ -85,6 +85,9 @@ export function Dashboard() {
     setEditingProperty(null);
   };
 
+  const handleRunAnalysis = () => {
+    navigate('/portfolio/analysis');
+  };
 
   if (showPropertyList) {
     return (
@@ -504,7 +507,10 @@ export function Dashboard() {
                   </svg>
                 </button>
 
-                <button className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all duration-200 group">
+                <button
+                  onClick={handleRunAnalysis}
+                  className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all duration-200 group"
+                >
                   <div className="flex items-center">
                     <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center mr-3">
                       <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
