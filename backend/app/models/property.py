@@ -35,6 +35,9 @@ class Property(Base):
     # Foreign key to user
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
 
+    # Foreign key to portfolio (folder system)
+    portfolio_id = Column(Integer, ForeignKey("portfolios.id"), nullable=True)
+
     # Basic property information
     name = Column(String(255), nullable=False)  # User-defined property name
     address = Column(String(500))
@@ -81,6 +84,9 @@ class Property(Base):
     financials = relationship("PropertyFinancials", back_populates="property_ref", uselist=False,
                               cascade="all, delete-orphan")
     portfolio_items = relationship("PortfolioProperty", back_populates="property", cascade="all, delete-orphan")
+
+    # New portfolio/folder relationship
+    portfolio = relationship("Portfolio", back_populates="properties")
 
     def __repr__(self):
         return f"<Property(id={self.id}, name={self.name}, type={self.property_type})>"
