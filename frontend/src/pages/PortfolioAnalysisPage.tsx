@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Percent, BarChart3, PieChart, Calculator, Target } from 'lucide-react';
 import { usePropertyStore, PropertyWithFinancials } from '../store/propertyStore';
 import {
@@ -22,9 +22,17 @@ import {
 
 const PortfolioAnalysisPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { properties, fetchProperties, isLoading, error } = usePropertyStore();
   const [analysisType, setAnalysisType] = useState<'overview' | 'performance' | 'comparison'>('overview');
   const [timeframe, setTimeframe] = useState<'1yr' | '3yr' | '5yr' | '10yr' | '20yr' | '30yr'>('1yr');
+
+  // Filter properties if viewing folder analysis
+  const portfolioId = location.state?.portfolioId;
+  const displayProperties = portfolioId
+    ? properties.filter(p => p.portfolio_id === portfolioId)
+    : properties;
+
 
   useEffect(() => {
     fetchProperties().catch(console.error);
@@ -52,15 +60,15 @@ const PortfolioAnalysisPage: React.FC = () => {
 
   // Calculate portfolio metrics
   const portfolioMetrics = React.useMemo(() => {
-    if (properties.length === 0) return null;
+    if (displayProperties.length === 0) return null;
 
-    const totalValue = properties.reduce((sum, p) => sum + (p.current_value || 0), 0);
-    const totalPurchasePrice = properties.reduce((sum, p) => sum + (p.purchase_price || 0), 0);
-    const totalMonthlyCashFlow = properties.reduce((sum, p) => sum + (p.monthly_cash_flow || 0), 0);
-    const totalMonthlyRent = properties.reduce((sum, p) => sum + (p.financials?.monthly_rent || 0), 0);
-    const totalMonthlyExpenses = properties.reduce((sum, p) => sum + (p.financials?.monthly_expenses || 0), 0);
+    const totalValue = displayProperties.reduce((sum, p) => sum + (p.current_value || 0), 0);
+    const totalPurchasePrice = displayProperties.reduce((sum, p) => sum + (p.purchase_price || 0), 0);
+    const totalMonthlyCashFlow = displayProperties.reduce((sum, p) => sum + (p.monthly_cash_flow || 0), 0);
+    const totalMonthlyRent = displayProperties.reduce((sum, p) => sum + (p.financials?.monthly_rent || 0), 0);
+    const totalMonthlyExpenses = displayProperties.reduce((sum, p) => sum + (p.financials?.monthly_expenses || 0), 0);
 
-    const propertiesWithCapRate = properties.filter(p => p.cap_rate && p.cap_rate > 0);
+    const propertiesWithCapRate = displayProperties.filter(p => p.cap_rate && p.cap_rate > 0);
     const avgCapRate = propertiesWithCapRate.length > 0
       ? propertiesWithCapRate.reduce((sum, p) => sum + (p.cap_rate || 0), 0) / propertiesWithCapRate.length
       : 0;
@@ -76,14 +84,14 @@ const PortfolioAnalysisPage: React.FC = () => {
     }, {} as Record<string, number>);
 
     // Geographic distribution (by address for now - could be enhanced with city/state)
-    const geoDistribution = properties.reduce((acc, property) => {
+    const geoDistribution = displayProperties.reduce((acc, property) => {
       const location = property.address?.split(',')[1]?.trim() || 'Unknown';
       acc[location] = (acc[location] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
     return {
-      totalProperties: properties.length,
+      totalProperties: displayProperties.length,
       totalValue,
       totalPurchasePrice,
       totalAppreciation,
@@ -97,11 +105,11 @@ const PortfolioAnalysisPage: React.FC = () => {
       grossRentMultiplier: totalValue > 0 ? totalValue / (totalMonthlyRent * 12) : 0,
       cashOnCashReturn: totalPurchasePrice > 0 ? (totalMonthlyCashFlow * 12 / totalPurchasePrice) * 100 : 0,
     };
-  }, [properties]);
+  }, [displayProperties]);
 
   // Performance insights
   const insights = React.useMemo(() => {
-    if (!portfolioMetrics || properties.length === 0) return [];
+    if (!portfolioMetrics || displayProperties.length === 0) return [];
 
     const insights = [];
 
@@ -151,7 +159,7 @@ const PortfolioAnalysisPage: React.FC = () => {
 
     // Diversification insight
     const typeCount = Object.keys(portfolioMetrics.typeDistribution).length;
-    if (typeCount === 1 && properties.length > 2) {
+    if (typeCount === 1 && displayProperties.length > 2) {
       insights.push({
         type: 'warning',
         title: 'Limited Diversification',
@@ -161,11 +169,11 @@ const PortfolioAnalysisPage: React.FC = () => {
     }
 
     return insights;
-  }, [portfolioMetrics, properties]);
+  }, [portfolioMetrics, displayProperties]);
 
   // Prepare chart data
   const chartData = React.useMemo(() => {
-    if (!portfolioMetrics || properties.length === 0) return null;
+    if (!portfolioMetrics || displayProperties.length === 0) return null;
 
     // Property performance data for pie chart
     const propertyTypeColors = {
@@ -178,7 +186,7 @@ const PortfolioAnalysisPage: React.FC = () => {
       'unknown': '#9ca3af'
     };
 
-    const propertyPerformanceData = properties.map(property => {
+    const propertyPerformanceData = displayProperties.map(property => {
       const monthlyRent = property.financials?.monthly_rent || 0;
       const rentToValueRatio = property.current_value > 0
         ? ((monthlyRent * 12) / property.current_value * 100)
@@ -306,7 +314,7 @@ const PortfolioAnalysisPage: React.FC = () => {
     });
 
     // Value vs Cash Flow scatter-like data
-    const valueVsCashFlowData = properties.map(property => ({
+    const valueVsCashFlowData = displayProperties.map(property => ({
       name: property.name,
       value: property.current_value,
       monthlyReturn: (property.monthly_cash_flow || 0) * 12,
@@ -346,7 +354,7 @@ const PortfolioAnalysisPage: React.FC = () => {
       valueVsCashFlowData,
       typeDistributionData
     };
-  }, [portfolioMetrics, properties, timeframe]);
+  }, [portfolioMetrics, displayProperties, timeframe]);
 
   if (isLoading) {
     return (
@@ -375,7 +383,7 @@ const PortfolioAnalysisPage: React.FC = () => {
     );
   }
 
-  if (properties.length === 0) {
+  if (displayProperties.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -424,7 +432,7 @@ const PortfolioAnalysisPage: React.FC = () => {
             </button>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Portfolio Analysis</h1>
-              <p className="text-gray-600">{properties.length} properties • {formatCurrency(portfolioMetrics!.totalValue)} total value</p>
+              <p className="text-gray-600">{displayProperties.length} properties • {formatCurrency(portfolioMetrics!.totalValue)} total value</p>
             </div>
           </div>
 
@@ -775,7 +783,7 @@ const PortfolioAnalysisPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {properties.map((property) => {
+                  {displayProperties.map((property) => {
                     const performance =
                       (property.cap_rate || 0) >= 8 ? 'excellent' :
                       (property.cap_rate || 0) >= 5 ? 'good' : 'poor';

@@ -1,6 +1,7 @@
 // src/components/properties/PropertyForm.tsx
 import React, { useState, useEffect } from 'react';
 import { usePropertyStore, PropertyCreate, PropertyWithFinancials } from '../../store/propertyStore';
+import { usePortfolioStore } from '../../store/portfolioStore';
 
 interface PropertyFormProps {
   property?: PropertyWithFinancials;
@@ -11,6 +12,7 @@ interface PropertyFormProps {
 
 export function PropertyForm({ property, onSuccess, onCancel, isModal = false }: PropertyFormProps) {
   const { createProperty, updateProperty, isLoading, error, clearError } = usePropertyStore();
+  const { portfolios, fetchPortfolios } = usePortfolioStore();
 
   const [formData, setFormData] = useState<PropertyCreate>({
     name: '',
@@ -23,6 +25,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
     bedrooms: undefined,
     bathrooms: undefined,
     is_primary_residence: false,
+    portfolio_id: undefined,
     monthly_rent: undefined,
     monthly_expenses: undefined,
     property_taxes: undefined,
@@ -34,6 +37,11 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
 
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
+
+  // Fetch portfolios when component mounts
+  useEffect(() => {
+    fetchPortfolios();
+  }, [fetchPortfolios]);
 
   // Populate form if editing existing property
   useEffect(() => {
@@ -49,13 +57,13 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
         bedrooms: property.bedrooms,
         bathrooms: property.bathrooms,
         is_primary_residence: property.is_primary_residence,
+        portfolio_id: property.portfolio_id,
         monthly_rent: property.financials?.monthly_rent,
         monthly_expenses: property.financials?.monthly_expenses,
         property_taxes: property.financials?.property_taxes,
         insurance: property.financials?.insurance,
         hoa_fees: property.financials?.hoa_fees,
         maintenance_costs: property.financials?.maintenance_costs,
-        // Convert decimal back to percentage for display
         vacancy_rate: property.financials?.vacancy_rate ? property.financials.vacancy_rate * 100 : undefined,
       });
     }
@@ -68,6 +76,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked
               : type === 'number' ? (value === '' ? undefined : parseFloat(value))
+              : name === 'portfolio_id' ? (value === '' ? null : parseInt(value))
               : value
     }));
   };
@@ -79,7 +88,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
       case 2:
         return !!(formData.purchase_price && formData.current_value);
       case 3:
-        return true; // Financial data is optional
+        return true;
       default:
         return false;
     }
@@ -87,12 +96,8 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
 
   const handleNext = (e: React.MouseEvent) => {
     e.preventDefault();
-    console.log('Next clicked, current step:', currentStep);
     if (validateStep(currentStep) && currentStep < totalSteps) {
-      console.log('Moving to step:', currentStep + 1);
       setCurrentStep(currentStep + 1);
-    } else {
-      console.log('Validation failed or at last step');
     }
   };
 
@@ -104,46 +109,40 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Form submitted! Current step:', currentStep);
+      e.preventDefault();
 
-    // Don't allow submission unless we're on the final step
-    if (currentStep !== totalSteps) {
-      console.log('Preventing submission - not on final step');
-      return false;
-    }
-
-    clearError();
-
-    if (!validateStep(1) || !validateStep(2)) {
-      console.log('Validation failed');
-      return;
-    }
-
-    console.log('Creating property with data:', formData);
-
-    try {
-      // Convert percentage fields to decimals for backend
-      const submitData = {
-        ...formData,
-        vacancy_rate: formData.vacancy_rate ? formData.vacancy_rate / 100 : undefined,
-      };
-
-      console.log('Submitting property data:', submitData);
-
-      const result = property
-        ? await updateProperty(property.id, submitData)
-        : await createProperty(submitData);
-
-      console.log('Property operation successful:', result);
-      onSuccess?.(result);
-    } catch (error) {
-      console.log('Property operation error:', error);
-      // Check if it's a network error
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.error('Network error - check if backend is running');
+      if (currentStep !== totalSteps) {
+        return false;
       }
-    }
+
+      clearError();
+
+      if (!validateStep(1) || !validateStep(2)) {
+        return;
+      }
+
+      try {
+        const submitData = {
+          ...formData,
+          vacancy_rate: formData.vacancy_rate ? formData.vacancy_rate / 100 : undefined,
+        };
+
+        console.log('Submitting data:', submitData);
+
+        const result = property
+          ? await updateProperty(property.id, submitData)
+          : await createProperty(submitData);
+
+        console.log('Success! Result:', result);
+        onSuccess?.(result);
+      } catch (error) {
+        console.error('Property operation failed');
+        console.error('Error type:', typeof error);
+        console.error('Error object:', error);
+        if (error instanceof Error) {
+          console.error('Error message:', error.message);
+        }
+      }
   };
 
   const formatCurrency = (amount: number) => {
@@ -206,7 +205,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
         {/* Error Display */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {typeof error === 'string' ? error : JSON.stringify(error, null, 2)}
+            {String(error)}
           </div>
         )}
 
@@ -266,6 +265,27 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
                     <option value="land">Land</option>
                     <option value="industrial">Industrial</option>
                   </select>
+                </div>
+
+                <div>
+                  <label htmlFor="portfolio_id" className="block text-sm font-medium text-gray-700 mb-2">
+                    Folder (Optional)
+                  </label>
+                  <select
+                    id="portfolio_id"
+                    name="portfolio_id"
+                    value={formData.portfolio_id || ''}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">No Folder (All Properties)</option>
+                    {portfolios.map((portfolio) => (
+                      <option key={portfolio.id} value={portfolio.id}>
+                        {portfolio.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">Organize your property into a folder for easy management</p>
                 </div>
 
                 <div>

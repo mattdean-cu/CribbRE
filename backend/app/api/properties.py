@@ -81,7 +81,16 @@ async def update_property(
     property_service = PropertyService(db)
 
     # Filter out None values from update data
-    update_data = {k: v for k, v in property_data.model_dump().items() if v is not None}
+    # Special handling for portfolio_id to allow setting it to None
+    update_dict = property_data.model_dump(exclude_unset=True)
+
+    # Filter out None values EXCEPT for portfolio_id
+    update_data = {}
+    for k, v in update_dict.items():
+        if k == 'portfolio_id':
+            update_data[k] = v  # Keep portfolio_id even if None
+        elif v is not None:
+            update_data[k] = v
 
     property_obj = property_service.update_property(
         property_id,

@@ -33,6 +33,7 @@ export interface PropertyFinancials {
 }
 
 export interface PropertyWithFinancials extends Property {
+  portfolio_id?: number;  // Add this line
   financials?: PropertyFinancials;
   monthly_cash_flow?: number;
   cap_rate?: number;
@@ -50,6 +51,7 @@ export interface PropertyCreate {
   bedrooms?: number;
   bathrooms?: number;
   is_primary_residence: boolean;
+  portfolio_id?: number | null;
   // Financial data
   monthly_rent?: number;
   monthly_expenses?: number;
@@ -78,6 +80,7 @@ interface PropertyState {
 }
 
 const API_BASE_URL = 'http://127.0.0.1:8080/api/v1';
+
 
 export const usePropertyStore = create<PropertyState>((set, get) => ({
   properties: [],

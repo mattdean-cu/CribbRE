@@ -2,10 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { usePropertyStore } from '../store/propertyStore';
+import { usePortfolioStore } from '../store/portfolioStore';
 import { PropertyList } from './properties/PropertyList';
 import { PropertyForm } from './properties/PropertyForm';
+import { PortfolioSidebar } from './portfolios/PortfolioSidebar';
 import { Modal } from './ui/Modal';
 import { useNavigate } from 'react-router-dom';
+import { AddExistingPropertyModal } from './portfolios/AddExistingPropertyModal';
 
 export function Dashboard() {
   const { user, logout } = useAuthStore();
@@ -14,35 +17,49 @@ export function Dashboard() {
     properties,
     fetchProperties,
     deleteProperty,
+    updateProperty,
     isLoading,
     error,
     setSelectedProperty
   } = usePropertyStore();
 
+  const { portfolios, movePropertyToPortfolio, fetchPortfolios } = usePortfolioStore();
+
   const [showPropertyList, setShowPropertyList] = useState(false);
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [editingProperty, setEditingProperty] = useState<any>(null);
+  const [selectedPortfolioId, setSelectedPortfolioId] = useState<number | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [showAddExistingModal, setShowAddExistingModal] = useState(false);
 
   // Fetch properties when dashboard loads
   useEffect(() => {
+    console.log('Dashboard useEffect running, calling fetchProperties');
     fetchProperties().catch(console.error);
   }, [fetchProperties]);
 
-  // Calculate portfolio metrics
+  const filteredProperties = React.useMemo(() => {
+      if (selectedPortfolioId === null) {
+          return properties; // Show all properties
+      }
+      return properties.filter(p => p.portfolio_id === selectedPortfolioId);
+  }, [properties, selectedPortfolioId]);
+
+  // Calculate portfolio metrics for current view
   const portfolioMetrics = React.useMemo(() => {
-    const totalValue = properties.reduce((sum: number, p: any) => sum + (p.current_value || 0), 0);
-    const totalCashFlow = properties.reduce((sum: number, p: any) => sum + (p.monthly_cash_flow || 0), 0);
-    const avgCapRate = properties.length > 0
-      ? properties.reduce((sum: number, p: any) => sum + (p.cap_rate || 0), 0) / properties.length
+    const totalValue = filteredProperties.reduce((sum: number, p: any) => sum + (p.current_value || 0), 0);
+    const totalCashFlow = filteredProperties.reduce((sum: number, p: any) => sum + (p.monthly_cash_flow || 0), 0);
+    const avgCapRate = filteredProperties.length > 0
+      ? filteredProperties.reduce((sum: number, p: any) => sum + (p.cap_rate || 0), 0) / filteredProperties.length
       : 0;
 
     return {
-      totalProperties: properties.length,
+      totalProperties: filteredProperties.length,
       totalValue,
       totalCashFlow,
       avgCapRate
     };
-  }, [properties]);
+  }, [filteredProperties]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -73,11 +90,13 @@ export function Dashboard() {
     }
   };
 
+
   const handlePropertyFormSuccess = async (property: any) => {
     setShowPropertyForm(false);
     setEditingProperty(null);
     // Refresh properties list
     await fetchProperties();
+    await fetchPortfolios();
   };
 
   const handlePropertyFormCancel = () => {
@@ -89,62 +108,118 @@ export function Dashboard() {
     navigate('/portfolio/analysis');
   };
 
+  const handleSelectPortfolio = (portfolioId: number | null) => {
+    setSelectedPortfolioId(portfolioId);
+  };
+
+  const handleMoveProperty = async (propertyId: number, targetPortfolioId: number) => {
+    try {
+      await movePropertyToPortfolio(propertyId, targetPortfolioId);
+      await fetchProperties(); // Refresh properties to show updated folder assignments
+    } catch (error) {
+      console.error('Failed to move property:', error);
+    }
+  };
+
+  // Get current portfolio name for display
+  const currentPortfolioName = React.useMemo(() => {
+    if (selectedPortfolioId === null) return 'All Properties';
+    const portfolio = portfolios.find(p => p.id === selectedPortfolioId);
+    return portfolio?.name || 'Unknown Portfolio';
+  }, [selectedPortfolioId, portfolios]);
+
   if (showPropertyList) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50">
-        {/* Header */}
-        <header className="bg-gradient-to-r from-[#0b591d] to-[#0f7024] shadow-sm border-b border-green-200/50 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => setShowPropertyList(false)}
-                  className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white/30 transition-all duration-200"
-                >
-                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <h1 className="text-xl font-bold text-white">
-                  Properties
-                </h1>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="hidden md:block text-right">
-                  <p className="text-sm font-medium text-white">
-                    {user?.full_name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || 'User'}
-                  </p>
-                  <p className="text-xs text-green-100">{user?.email}</p>
-                </div>
-                <button
-                  onClick={logout}
-                  className="px-4 py-2 text-sm font-medium text-white hover:text-green-100 hover:bg-white/10 rounded-lg transition-all duration-200"
-                >
-                  Sign Out
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Property List */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50 flex">
+        {/* Sidebar */}
+        <div className={`transition-all duration-300 ${sidebarCollapsed ? 'w-0' : 'w-80'} flex-shrink-0`}>
+          {!sidebarCollapsed && (
+            <div className="h-full border-r border-gray-200/50">
+              {<PortfolioSidebar
+                selectedPortfolioId={selectedPortfolioId}
+                onSelectPortfolio={handleSelectPortfolio}
+                className="h-full rounded-none border-0"
+              /> }
             </div>
           )}
-
-          <PropertyList
-            properties={properties}
-            onAddProperty={handleAddProperty}
-            onEditProperty={handleEditProperty}
-            onDeleteProperty={handleDeleteProperty}
-          />
         </div>
 
-        {/* Property Form Modal - Also available on Property List page */}
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <header className="bg-gradient-to-r from-[#0b591d] to-[#0f7024] shadow-sm border-b border-green-200/50 sticky top-0 z-40">
+            <div className="px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center h-16">
+                <div className="flex items-center space-x-4">
+                  <button
+                      onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                      className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white/30 transition-all duration-200"
+                    >
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                    </button>
+                  <button
+                    onClick={() => setShowPropertyList(false)}
+                    className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white/30 transition-all duration-200"
+                  >
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <h1 className="text-xl font-bold text-white">
+                    {currentPortfolioName}
+                  </h1>
+                  <span className="text-sm text-white/80">
+                    ({portfolioMetrics.totalProperties} properties)
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => navigate('/portfolio/analysis')}
+                    className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-medium rounded-lg hover:bg-white/30 transition-all duration-200 flex items-center"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Analysis
+                  </button>
+                  <div className="hidden md:block text-right">
+                    <p className="text-sm font-medium text-white">
+                      {user?.full_name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || 'User'}
+                    </p>
+                    <p className="text-xs text-green-100">{user?.email}</p>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="px-4 py-2 text-sm font-medium text-white hover:text-green-100 hover:bg-white/10 rounded-lg transition-all duration-200"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Property List */}
+          <div className="flex-1 px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto">
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
+
+            <PropertyList
+              properties={filteredProperties}
+              onAddProperty={handleAddProperty}
+              onEditProperty={handleEditProperty}
+              onDeleteProperty={handleDeleteProperty}
+            />
+          </div>
+        </div>
+
+        {/* Property Form Modal */}
         <Modal
           isOpen={showPropertyForm}
           onClose={() => setShowPropertyForm(false)}
@@ -162,137 +237,165 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50">
-      {/* Modern Header */}
-      <header className="bg-gradient-to-r from-[#0b591d] to-[#0f7024] shadow-lg border-b border-green-200/50 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2V7zm16 0V5a2 2 0 00-2-2H7a2 2 0 00-2 2v2m16 0H3" />
-                </svg>
-              </div>
-              <h1 className="text-xl font-bold text-white">
-                Portfolio
-              </h1>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <div className="hidden md:block text-right">
-                <p className="text-sm font-medium text-white">
-                  {user?.full_name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || 'User'}
-                </p>
-                <p className="text-xs text-green-100">{user?.email}</p>
-              </div>
-              <button
-                onClick={logout}
-                className="px-4 py-2 text-sm font-medium text-white hover:text-green-100 hover:bg-white/10 rounded-lg transition-all duration-200"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-6">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Manage Your Real Estate Portfolio
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Ready to grow your real estate empire? Let's dive into your portfolio performance.
-          </p>
-        </div>
-
-        {/* Loading State */}
-        {isLoading && (
-          <div className="text-center py-8">
-            <div className="inline-flex items-center">
-              <svg className="animate-spin h-6 w-6 text-[#0b591d] mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span className="text-gray-600">Loading portfolio...</span>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50 flex">
+      {/* Sidebar */}
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'w-0' : 'w-80'} flex-shrink-0`}>
+        {!sidebarCollapsed && (
+          <div className="h-full border-r border-gray-200/50">
+            { <PortfolioSidebar
+              selectedPortfolioId={selectedPortfolioId}
+              onSelectPortfolio={handleSelectPortfolio}
+              className="h-full rounded-none border-0"
+            /> }
           </div>
         )}
+      </div>
 
-        {/* Error State */}
-        {error && (
-          <div className="mb-8 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <div className="group bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200/50 hover:border-green-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-[#0b591d] to-[#0f7024] rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H5m0 0h4M7 7h10M7 10h10M7 13h10" />
-                </svg>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Modern Header */}
+        <header className="bg-gradient-to-r from-[#0b591d] to-[#0f7024] shadow-lg border-b border-green-200/50 sticky top-0 z-40">
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center space-x-4">
+                <button
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white/30 transition-all duration-200"
+                >
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                </button>
+                <h1 className="text-xl font-bold text-white">
+                  {currentPortfolioName}
+                </h1>
               </div>
-              <span className="text-sm font-medium text-[#0b591d] bg-green-50 px-2 py-1 rounded-full">+0%</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{portfolioMetrics.totalProperties}</h3>
-            <p className="text-gray-600 text-sm">Total Properties</p>
-          </div>
 
-          <div className="group bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200/50 hover:border-green-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
+              <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => navigate('/portfolio/analysis')}
+                    className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-medium rounded-lg hover:bg-white/30 transition-all duration-200 flex items-center"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Analysis
+                  </button>
+                  <div className="hidden md:block text-right">
+                    <p className="text-sm font-medium text-white">
+                      {user?.full_name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || 'User'}
+                    </p>
+                    <p className="text-xs text-green-100">{user?.email}</p>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="px-4 py-2 text-sm font-medium text-white hover:text-green-100 hover:bg-white/10 rounded-lg transition-all duration-200"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Dashboard Content */}
+        <div className="flex-1 overflow-auto">
+          <div className="px-4 sm:px-6 lg:px-8 pt-8 pb-6 max-w-7xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                Manage Your Real Estate Portfolio
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Ready to grow your real estate empire? Let's dive into your portfolio performance.
+              </p>
+            </div>
+
+            {/* Loading State */}
+            {isLoading && (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center">
+                  <svg className="animate-spin h-6 w-6 text-[#0b591d] mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span className="text-gray-600">Loading portfolio...</span>
+                </div>
               </div>
-              <span className="text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+0%</span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(portfolioMetrics.totalValue)}</h3>
-            <p className="text-gray-600 text-sm">Portfolio Value</p>
-          </div>
+            )}
 
-          <div className="group bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200/50 hover:border-green-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
+            {/* Error State */}
+            {error && (
+              <div className="mb-8 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                {error}
               </div>
-              <span className={`text-sm font-medium px-2 py-1 rounded-full ${portfolioMetrics.totalCashFlow >= 0 ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
-                {portfolioMetrics.totalCashFlow >= 0 ? '+' : ''}{((portfolioMetrics.totalCashFlow / Math.max(portfolioMetrics.totalValue, 1)) * 100).toFixed(1)}%
-              </span>
-            </div>
-            <h3 className={`text-2xl font-bold mb-1 ${portfolioMetrics.totalCashFlow >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-              {formatCurrency(portfolioMetrics.totalCashFlow)}
-            </h3>
-            <p className="text-gray-600 text-sm">Monthly Cash Flow</p>
-          </div>
+            )}
 
-          <div className="group bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200/50 hover:border-green-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-lime-500 to-lime-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+              <div className="group bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200/50 hover:border-green-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-[#0b591d] to-[#0f7024] rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H5m0 0h4M7 7h10M7 10h10M7 13h10" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-[#0b591d] bg-green-50 px-2 py-1 rounded-full">+0%</span>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">{portfolioMetrics.totalProperties}</h3>
+                <p className="text-gray-600 text-sm">Properties in {currentPortfolioName}</p>
               </div>
-              <span className="text-sm font-medium text-lime-600 bg-lime-50 px-2 py-1 rounded-full">
-                {portfolioMetrics.avgCapRate.toFixed(1)}%
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{portfolioMetrics.avgCapRate.toFixed(1)}%</h3>
-            <p className="text-gray-600 text-sm">Avg Cap Rate</p>
-          </div>
-        </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Properties Overview - Left Column */}
-          <div className="lg:col-span-2">
-            {properties.length === 0 ? (
+              <div className="group bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200/50 hover:border-green-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+0%</span>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(portfolioMetrics.totalValue)}</h3>
+                <p className="text-gray-600 text-sm">Portfolio Value</p>
+              </div>
+
+              <div className="group bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200/50 hover:border-green-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                  <span className={`text-sm font-medium px-2 py-1 rounded-full ${portfolioMetrics.totalCashFlow >= 0 ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
+                    {portfolioMetrics.totalCashFlow >= 0 ? '+' : ''}{((portfolioMetrics.totalCashFlow / Math.max(portfolioMetrics.totalValue, 1)) * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <h3 className={`text-2xl font-bold mb-1 ${portfolioMetrics.totalCashFlow >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
+                  {formatCurrency(portfolioMetrics.totalCashFlow)}
+                </h3>
+                <p className="text-gray-600 text-sm">Monthly Cash Flow</p>
+              </div>
+
+              <div className="group bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200/50 hover:border-green-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-lime-500 to-lime-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-lime-600 bg-lime-50 px-2 py-1 rounded-full">
+                    {portfolioMetrics.avgCapRate.toFixed(1)}%
+                  </span>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">{portfolioMetrics.avgCapRate.toFixed(1)}%</h3>
+                <p className="text-gray-600 text-sm">Avg Cap Rate</p>
+              </div>
+            </div>
+
+            {/* Rest of your existing dashboard content... */}
+            {/* The properties grid, insights cards, etc. can stay the same */}
+            {/* But now they'll be filtered by the selected portfolio */}
+
+            {filteredProperties.length === 0 ? (
               <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-sm border border-gray-200/50">
                 <div className="text-center py-16">
                   <div className="w-24 h-24 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -300,58 +403,92 @@ export function Dashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2V7zm16 0V5a2 2 0 00-2-2H7a2 2 0 00-2 2v2m16 0H3" />
                     </svg>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Start Building Your Empire</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                    {selectedPortfolioId === null ? 'Start Building Your Empire' : `No Properties in ${currentPortfolioName}`}
+                  </h3>
                   <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
-                    Your real estate journey begins here. Add your first property and watch your portfolio come to life with powerful analytics and insights.
+                    {selectedPortfolioId === null
+                      ? 'Your real estate journey begins here. Add your first property and watch your portfolio come to life with powerful analytics and insights.'
+                      : `This folder is empty. Add properties to ${currentPortfolioName} or select a different folder.`
+                    }
                   </p>
-                  <button
-                    onClick={handleAddProperty}
-                    className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-[#0b591d] to-[#0f7024] text-white font-semibold rounded-xl hover:from-[#0a4e1a] hover:to-[#0d5f20] transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
-                  >
-                    <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Add Your First Property
-                  </button>
+                  <div className="flex items-center justify-center space-x-4">
+                    <button
+                      onClick={handleAddProperty}
+                      className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-[#0b591d] to-[#0f7024] text-white font-semibold rounded-xl hover:from-[#0a4e1a] hover:to-[#0d5f20] transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Add Property
+                    </button>
+                    {selectedPortfolioId !== null && (
+                      <button
+                        onClick={() => setSelectedPortfolioId(null)}
+                        className="inline-flex items-center px-6 py-4 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-all duration-200"
+                      >
+                        View All Properties
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
               <div className="space-y-6">
                 {/* Properties Header */}
                 <div className="flex justify-between items-center">
-                  <h3 className="text-2xl font-bold text-gray-900">Your Properties</h3>
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={handleAddProperty}
-                      className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-[#0b591d] to-[#0f7024] text-white font-medium rounded-lg hover:from-[#0a4e1a] hover:to-[#0d5f20] transition-all duration-200"
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Add Property
-                    </button>
-                    <button
-                      onClick={() => setShowPropertyList(true)}
-                      className="text-[#0b591d] hover:text-[#0a4e1a] font-medium text-sm flex items-center"
-                    >
-                      View All
-                      <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    Properties in {currentPortfolioName}
+                  </h3>
+                  {selectedPortfolioId !== null && (
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={() => setSelectedPortfolioId(null)}
+                          className="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-all duration-200"
+                        >
+                          View All Properties
+                        </button>
+                        <button
+                          onClick={handleAddProperty}
+                          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-[#0b591d] to-[#0f7024] text-white font-medium rounded-lg hover:from-[#0a4e1a] hover:to-[#0d5f20] transition-all duration-200"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          Add New Property
+                        </button>
+                        <button
+                          onClick={() => setShowAddExistingModal(true)}
+                          className="inline-flex items-center px-4 py-2 border-2 border-[#0b591d] text-[#0b591d] font-medium rounded-lg hover:bg-green-50 transition-all duration-200"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Add Existing Property
+                        </button>
+                        <button
+                          onClick={() => navigate('/portfolio/analysis', { state: { portfolioId: selectedPortfolioId } })}
+                          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          Folder Analysis
+                        </button>
+                      </div>
+                    )}
                 </div>
 
-                {/* Property Cards Grid */}
+                {/* Property Cards Grid - Show first 4 properties */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {properties.map((property: any) => (
+                  {filteredProperties.slice(0, 4).map((property: any) => (
                     <div
                       key={property.id}
                       className="group bg-white/70 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 hover:shadow-lg hover:border-green-200 transition-all duration-300 overflow-hidden relative"
                     >
-                      {/* Property Image */}
+                      {/* Existing property card content... */}
+                      {/* This is the same as your original property cards */}
                       <div className="relative h-48 bg-gradient-to-br from-green-100 to-emerald-100 overflow-hidden">
-                        {/* Placeholder for future image implementation */}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-center">
                             <svg className="w-16 h-16 text-[#0b591d] mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -361,7 +498,6 @@ export function Dashboard() {
                           </div>
                         </div>
 
-                        {/* Property Type Badge */}
                         <div className="absolute top-4 left-4">
                           <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
                             property.property_type === 'residential' ? 'bg-green-100 text-green-800' :
@@ -375,7 +511,6 @@ export function Dashboard() {
                           </span>
                         </div>
 
-                        {/* Action Buttons */}
                         <div className="absolute top-4 right-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={(e) => {
@@ -389,6 +524,24 @@ export function Dashboard() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
+                          {selectedPortfolioId !== null && (
+                            <button
+                              onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm(`Remove "${property.name}" from ${currentPortfolioName}?`)) {
+                                    await updateProperty(property.id, { portfolio_id: null });
+                                    await fetchProperties();
+                                    await fetchPortfolios();
+                                  }
+                                }}
+                              className="w-8 h-8 bg-white/90 hover:bg-white rounded-lg flex items-center justify-center transition-all duration-200 shadow-sm"
+                              title="Remove from Folder"
+                            >
+                              <svg className="w-4 h-4 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -406,7 +559,6 @@ export function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Property Details */}
                       <div
                         onClick={() => navigate(`/properties/${property.id}`)}
                         className="p-6 cursor-pointer"
@@ -418,7 +570,6 @@ export function Dashboard() {
                           <p className="text-sm text-gray-500">{property.address}</p>
                         </div>
 
-                        {/* Financial Metrics */}
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div>
                             <p className="text-xs text-gray-500 uppercase tracking-wider">Current Value</p>
@@ -432,7 +583,6 @@ export function Dashboard() {
                           </div>
                         </div>
 
-                        {/* Bottom Row */}
                         <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                           <div className="flex items-center space-x-4 text-sm text-gray-600">
                             {property.cap_rate !== undefined && property.cap_rate > 0 && (
@@ -467,13 +617,13 @@ export function Dashboard() {
                   ))}
                 </div>
 
-                {properties.length > 4 && (
+                {filteredProperties.length > 4 && (
                   <div className="text-center pt-6">
                     <button
                       onClick={() => setShowPropertyList(true)}
                       className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 font-medium rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200"
                     >
-                      View All {properties.length} Properties
+                      View All {filteredProperties.length} Properties
                       <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
@@ -482,122 +632,6 @@ export function Dashboard() {
                 )}
               </div>
             )}
-          </div>
-
-          {/* Right Column - Quick Actions & Insights */}
-          <div className="space-y-6">
-            {/* Quick Actions Card */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-200/50">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h4>
-              <div className="space-y-3">
-                <button
-                  onClick={handleAddProperty}
-                  className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 rounded-lg transition-all duration-200 group"
-                >
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-gradient-to-r from-[#0b591d] to-[#0f7024] rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">Add Property</span>
-                  </div>
-                  <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-
-                <button
-                  onClick={handleRunAnalysis}
-                  className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all duration-200 group"
-                >
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">Run Analysis</span>
-                  </div>
-                  <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-
-                <button className="w-full flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all duration-200 group">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-3">
-                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                      </svg>
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">Import Data</span>
-                  </div>
-                  <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Portfolio Insights Card */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-200/50">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Portfolio Insights</h4>
-              {properties.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Best Performer</span>
-                    <span className="text-sm font-medium text-[#0b591d]">
-                      {properties.reduce((best, current) =>
-                        (current.cap_rate || 0) > (best.cap_rate || 0) ? current : best, properties[0]
-                      )?.name || 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Avg. ROI</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {portfolioMetrics.avgCapRate.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Monthly Income</span>
-                    <span className={`text-sm font-medium ${portfolioMetrics.totalCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(portfolioMetrics.totalCashFlow)}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">Add properties to see insights</p>
-              )}
-            </div>
-
-            {/* Market Updates Card */}
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-200/50">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Market Updates</h4>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Interest Rates</p>
-                    <p className="text-xs text-gray-600">30-year fixed rates trending down</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-[#0b591d] rounded-full mt-2 flex-shrink-0"></div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Market Trends</p>
-                    <p className="text-xs text-gray-600">Rental demand increasing in urban areas</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2 flex-shrink-0"></div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Investment Tip</p>
-                    <p className="text-xs text-gray-600">Consider diversifying property types</p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -615,6 +649,20 @@ export function Dashboard() {
           isModal={true}
         />
       </Modal>
+
+      {/* Add Existing Property Modal */}
+      <AddExistingPropertyModal
+        isOpen={showAddExistingModal}
+        onClose={() => setShowAddExistingModal(false)}
+        portfolioId={selectedPortfolioId || 0}
+        portfolioName={currentPortfolioName}
+        allProperties={properties}
+        onAddProperty={async (propertyId) => {
+            if (selectedPortfolioId) {
+                await handleMoveProperty(propertyId, selectedPortfolioId);
+            }
+          }}
+        />
     </div>
   );
 }

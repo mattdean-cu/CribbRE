@@ -43,6 +43,7 @@ class PropertyBase(BaseModel):
 class PropertyCreate(PropertyBase, PropertyFinancialsBase):
     """Schema for creating a property"""
     down_payment: Optional[float] = Field(default=0, ge=0, description="Down payment amount")
+    portfolio_id: Optional[int] = Field(default=None, description="Portfolio/folder ID")  # Add this line
 
     class Config:
         json_schema_extra = {
@@ -59,7 +60,8 @@ class PropertyCreate(PropertyBase, PropertyFinancialsBase):
                 "property_taxes": 3000,
                 "insurance": 1200,
                 "down_payment": 60000,
-                "is_primary_residence": False
+                "is_primary_residence": False,
+                "portfolio_id": None
             }
         }
 
@@ -76,6 +78,7 @@ class PropertyUpdate(BaseModel):
     bedrooms: Optional[int] = Field(default=None, ge=0)
     bathrooms: Optional[float] = Field(default=None, ge=0)
     is_primary_residence: Optional[bool] = Field(default=None)
+    portfolio_id: Optional[int] = Field(default=None, description="Portfolio/folder ID")  # Add this line
 
     # Financial fields
     monthly_rent: Optional[float] = Field(default=None, ge=0)
@@ -86,15 +89,13 @@ class PropertyUpdate(BaseModel):
     vacancy_rate: Optional[float] = Field(default=None, ge=0, le=1)
     down_payment: Optional[float] = Field(default=None, ge=0)
 
-
 class PropertyResponse(PropertyBase):
     """Schema for property responses"""
     id: int
     user_id: int
+    portfolio_id: Optional[int] = None
     financials: Optional[PropertyFinancialsResponse] = None
-
     model_config = ConfigDict(from_attributes=True)
-
 
 # Property type enum for validation
 PROPERTY_TYPES = [
