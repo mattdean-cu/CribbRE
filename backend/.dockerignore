@@ -1,0 +1,75 @@
+# .dockerignore
+# Place this file in /backend folder
+# Speeds up deployment by excluding unnecessary files
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Environment variables (these are set in Railway dashboard)
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Alembic - keep migration files but not version tracking
+alembic/versions/__pycache__/
+
+# Uploads (if you have a local uploads folder)
+uploads/
+tmp/
+temp/
+
+# Documentation
+docs/
+*.md
+README.md
