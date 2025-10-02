@@ -9,6 +9,8 @@ import { PortfolioSidebar } from './portfolios/PortfolioSidebar';
 import { Modal } from './ui/Modal';
 import { useNavigate } from 'react-router-dom';
 import { AddExistingPropertyModal } from './portfolios/AddExistingPropertyModal';
+import { getTierLimits, canAddProperty } from '../utils/subscriptionLimits';
+import { UpgradeModal } from './UpgradeModal';
 
 export function Dashboard() {
   const { user, logout } = useAuthStore();
@@ -24,13 +26,15 @@ export function Dashboard() {
   } = usePropertyStore();
 
   const { portfolios, movePropertyToPortfolio, fetchPortfolios } = usePortfolioStore();
-
+  const userLimits = getTierLimits(user?.subscription_tier);
   const [showPropertyList, setShowPropertyList] = useState(false);
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [editingProperty, setEditingProperty] = useState<any>(null);
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<number | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [showAddExistingModal, setShowAddExistingModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<'properties' | 'analysis' | 'folders'>('properties');
 
   // Fetch properties when dashboard loads
   useEffect(() => {
@@ -70,11 +74,18 @@ export function Dashboard() {
     }).format(amount);
   };
 
-  const handleAddProperty = () => {
-    console.log('Add Property button clicked!');
-    setEditingProperty(null);
-    setShowPropertyForm(true);
-  };
+const handleAddProperty = () => {
+      // Check if user can add more properties
+      if (!canAddProperty(properties.length, user?.subscription_tier)) {
+        setUpgradeReason('properties');
+        setShowUpgradeModal(true);
+        return;
+      }
+
+      console.log('Add Property button clicked!');
+      setEditingProperty(null);
+      setShowPropertyForm(true);
+    };
 
   const handleEditProperty = (property: any) => {
     setEditingProperty(property);
@@ -151,7 +162,8 @@ export function Dashboard() {
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center h-16">
                 <div className="flex items-center space-x-4">
-                  <button
+                  {userLimits.hasFolders && (
+                    <button
                       onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                       className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white/30 transition-all duration-200"
                     >
@@ -159,6 +171,7 @@ export function Dashboard() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                       </svg>
                     </button>
+                  )}
                   <button
                     onClick={() => setShowPropertyList(false)}
                     className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white/30 transition-all duration-200"
@@ -176,15 +189,36 @@ export function Dashboard() {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => navigate('/portfolio/analysis')}
-                    className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-medium rounded-lg hover:bg-white/30 transition-all duration-200 flex items-center"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    Analysis
-                  </button>
+                  {userLimits.hasAnalysis && (
+                      <button
+                        onClick={() => navigate('/portfolio/analysis')}
+                        className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-medium rounded-lg hover:bg-white/30 transition-all duration-200 flex items-center"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Analysis
+                      </button>
+                    )}
+                  {/* Subscription badge */}
+                    <div className="hidden md:block">
+                      <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full ${
+                        user?.subscription_tier === 'pro'
+                          ? 'bg-yellow-400 text-yellow-900'
+                          : user?.subscription_tier === 'plus'
+                          ? 'bg-white text-gray-800 border-2 border-gray-300'
+                          : 'bg-gray-300 text-gray-700'
+                      }`}>
+                        {user?.subscription_tier || 'BASIC'}
+                      </span>
+                      <button
+                        onClick={() => navigate('/pricing')}
+                        className="px-3 py-1 text-xs font-medium text-white bg-white/20 hover:bg-white/30 rounded-lg transition-all duration-200"
+                      >
+                        Manage Plan
+                      </button>
+                    </div>
+
                   <div className="hidden md:block text-right">
                     <p className="text-sm font-medium text-white">
                       {user?.full_name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || 'User'}
@@ -239,17 +273,19 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50 flex">
       {/* Sidebar */}
-      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'w-0' : 'w-80'} flex-shrink-0`}>
-        {!sidebarCollapsed && (
-          <div className="h-full border-r border-gray-200/50">
-            { <PortfolioSidebar
-              selectedPortfolioId={selectedPortfolioId}
-              onSelectPortfolio={handleSelectPortfolio}
-              className="h-full rounded-none border-0"
-            /> }
-          </div>
-        )}
-      </div>
+      {userLimits.hasFolders && (
+        <div className={`transition-all duration-300 ${sidebarCollapsed ? 'w-0' : 'w-80'} flex-shrink-0`}>
+          {!sidebarCollapsed && (
+            <div className="h-full border-r border-gray-200/50">
+              <PortfolioSidebar
+                selectedPortfolioId={selectedPortfolioId}
+                onSelectPortfolio={handleSelectPortfolio}
+                className="h-full rounded-none border-0"
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
@@ -258,29 +294,51 @@ export function Dashboard() {
           <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-4">
-                <button
-                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                    className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white/30 transition-all duration-200"
-                >
-                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                    </svg>
-                </button>
-                <h1 className="text-xl font-bold text-white">
+                  {userLimits.hasFolders && (
+                    <button
+                      onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                      className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white/30 transition-all duration-200"
+                    >
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                    </button>
+                  )}
+                  <h1 className="text-xl font-bold text-white">
                   {currentPortfolioName}
                 </h1>
               </div>
 
               <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => navigate('/portfolio/analysis')}
-                    className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-medium rounded-lg hover:bg-white/30 transition-all duration-200 flex items-center"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    Analysis
-                  </button>
+                  {userLimits.hasAnalysis && (
+                      <button
+                        onClick={() => navigate('/portfolio/analysis')}
+                        className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-medium rounded-lg hover:bg-white/30 transition-all duration-200 flex items-center"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Analysis
+                      </button>
+                    )}
+                  {/* Subscription badge */}
+                    <div className="hidden md:block">
+                      <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full ${
+                        user?.subscription_tier === 'pro'
+                          ? 'bg-yellow-400 text-yellow-900'
+                          : user?.subscription_tier === 'plus'
+                          ? 'bg-white text-gray-800 border-2 border-gray-300'
+                          : 'bg-gray-300 text-gray-700'
+                      }`}>
+                        {user?.subscription_tier || 'BASIC'}
+                      </span>
+                      <button
+                        onClick={() => navigate('/pricing')}
+                        className="px-3 py-1 text-xs font-medium text-white bg-white/20 hover:bg-white/30 rounded-lg transition-all duration-200"
+                      >
+                        Manage Plan
+                      </button>
+                    </div>
                   <div className="hidden md:block text-right">
                     <p className="text-sm font-medium text-white">
                       {user?.full_name || `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || 'User'}
@@ -675,6 +733,14 @@ export function Dashboard() {
             }
           }}
         />
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        currentTier={user?.subscription_tier || 'free'}
+        reason={upgradeReason}
+      />
     </div>
   );
 }

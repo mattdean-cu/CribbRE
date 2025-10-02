@@ -9,6 +9,7 @@ interface User {
   first_name?: string;
   last_name?: string;
   is_active: boolean;
+  subscription_tier: string;
   created_at?: string;
 }
 
@@ -37,10 +38,14 @@ interface RegisterData {
 interface LoginResponse {
   access_token: string;
   token_type: string;
+  user_id: number;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  subscription_tier: string;
 }
 
-const API_BASE_URL = 'http://127.0.0.1:8080/api/v1';
-
+const API_BASE_URL = 'http://10.0.0.43:8080/api/v1';
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -52,49 +57,50 @@ export const useAuthStore = create<AuthState>()(
       error: null,
 
       login: async (email: string, password: string) => {
-        set({ isLoading: true, error: null });
+          set({ isLoading: true, error: null });
 
-        try {
-          const response = await fetch(`${API_BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email,
-              password
-            }),
-          });
+          try {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: JSON.stringify({ email, password }),
+            });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Login failed');
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.detail || 'Login failed');
+            }
+
+            const data: LoginResponse = await response.json();
+            console.log('Login response:', data);
+
+            const token = data.access_token;
+
+            set({
+              token,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+
+            // Fire-and-forget - don't await this
+            void get().getCurrentUser();
+
+          } catch (error) {
+            console.error('Login error:', error);
+            set({
+              error: error instanceof Error ? error.message : 'Login failed',
+              isLoading: false,
+              isAuthenticated: false,
+              token: null,
+              user: null,
+            });
+            throw error;
           }
-
-          const data: LoginResponse = await response.json();
-          const token = data.access_token;
-
-          set({
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null
-          });
-
-          // Get user data after successful login
-          await get().getCurrentUser();
-
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : 'Login failed',
-            isLoading: false,
-            isAuthenticated: false,
-            token: null,
-            user: null
-          });
-          throw error;
-        }
-      },
+        },
 
       register: async (userData: RegisterData) => {
         set({ isLoading: true, error: null });
@@ -134,29 +140,54 @@ export const useAuthStore = create<AuthState>()(
       },
 
       getCurrentUser: async () => {
-        const { token } = get();
-        if (!token) return;
+          const { token } = get();
+          console.log('getCurrentUser called, token:', token ? 'exists' : 'missing');
 
-        try {
-          const response = await fetch(`${API_BASE_URL}/auth/me`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to get user data');
+          if (!token) {
+            console.log('No token, skipping getCurrentUser');
+            return;
           }
 
-          const user: User = await response.json();
-          set({ user });
+          try {
+            console.log('Fetching /auth/me...');
 
-        } catch (error) {
-          console.error('Failed to get current user:', error);
-          // If token is invalid, logout
-          get().logout();
-        }
-      },
+            // Add timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+            const response = await fetch(`${API_BASE_URL}/auth/me`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+              },
+              signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('Response error:', errorText);
+              throw new Error('Failed to get user data');
+            }
+
+            const user: User = await response.json();
+            console.log('Current user data:', user);
+
+            set({ user });
+
+          } catch (error) {
+            if (error instanceof Error && error.name === 'AbortError') {
+              console.error('Request timeout - /auth/me took too long');
+            } else {
+              console.error('Failed to get current user:', error);
+            }
+            // Don't logout on getCurrentUser failure, just log it
+          }
+        },
 
       logout: () => {
         set({

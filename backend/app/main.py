@@ -1,6 +1,4 @@
 # main.py
-# Updated FastAPI app with property management and portfolio folder endpoints
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.settings import settings
@@ -14,19 +12,26 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware
+# CORS middleware - MUST be before routers
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://10.0.0.43:3000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+    ],
     allow_credentials=True,
+    allow_origin_regex=".*",
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers
+# Include routers AFTER middleware
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(properties_router, prefix="/api/v1")
-app.include_router(portfolios_router, prefix="/api/v1")  # New portfolio folder routes
+app.include_router(portfolios_router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

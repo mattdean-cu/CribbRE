@@ -27,6 +27,8 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     is_superuser = Column(Boolean, default=False)
 
+    subscription_tier = Column(String(20), default="pro", nullable=False)
+
     # Verification tokens
     verification_token = Column(String(255))
     reset_password_token = Column(String(255))

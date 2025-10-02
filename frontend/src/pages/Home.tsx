@@ -492,7 +492,7 @@ export function Home() {
                       </div>
 
                       <button
-                        onClick={() => navigate('/register')}
+                        onClick={() => navigate('/pricing')}
                         className="w-full px-6 py-3 bg-gradient-to-r from-[#0b591d] to-[#0f7024] text-white font-semibold rounded-xl hover:from-[#0a4e1a] hover:to-[#0d5f20] transition-all duration-200 mb-6 shadow-md"
                       >
                         Start 14-Day Free Trial
@@ -551,7 +551,7 @@ export function Home() {
                       </div>
 
                       <button
-                        onClick={() => navigate('/register')}
+                        onClick={() => navigate('/pricing')}
                         className="w-full px-6 py-3 bg-gradient-to-r from-[#0b591d] to-[#0f7024] text-white font-semibold rounded-xl hover:from-[#0a4e1a] hover:to-[#0d5f20] transition-all duration-200 mb-6"
                       >
                         Start 14-Day Free Trial

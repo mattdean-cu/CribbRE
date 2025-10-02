@@ -37,6 +37,9 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user_id: int
     email: str
+    first_name: str = None
+    last_name: str = None
+    subscription_tier: str  # Add this
 
 
 # Dependency to get current user
@@ -98,7 +101,10 @@ async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
         "access_token": access_token,
         "token_type": "bearer",
         "user_id": user.id,
-        "email": user.email
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "subscription_tier": user.subscription_tier  # Add this
     }
 
 
@@ -109,5 +115,8 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "id": current_user.id,
         "email": current_user.email,
         "full_name": current_user.full_name,
-        "is_active": current_user.is_active
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "is_active": current_user.is_active,
+        "subscription_tier": current_user.subscription_tier  # Add this
     }

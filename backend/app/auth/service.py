@@ -57,7 +57,8 @@ class AuthService:
                 first_name=first_name,
                 last_name=last_name,
                 is_active=True,  # For now, activate immediately
-                is_verified=True  # For now, verify immediately
+                is_verified=True,  # For now, verify immediately
+                subscription_tier = "pro"
             )
 
             db.add(user)

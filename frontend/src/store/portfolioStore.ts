@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { useAuthStore } from './authStore';
 
-const API_BASE_URL = 'http://127.0.0.1:8080/api/v1';
+const API_BASE_URL = 'http://10.0.0.43:8080/api/v1';
 
 
 // Types
