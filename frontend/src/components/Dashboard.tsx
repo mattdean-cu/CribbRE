@@ -440,8 +440,9 @@ export function Dashboard() {
                   <h3 className="text-2xl font-bold text-gray-900">
                     Properties in {currentPortfolioName}
                   </h3>
-                  {selectedPortfolioId !== null && (
-                      <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3">
+                    {selectedPortfolioId !== null ? (
+                      <>
                         <button
                           onClick={() => setSelectedPortfolioId(null)}
                           className="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-all duration-200"
@@ -475,8 +476,19 @@ export function Dashboard() {
                           </svg>
                           Folder Analysis
                         </button>
-                      </div>
+                      </>
+                    ) : (
+                      <button
+                        onClick={handleAddProperty}
+                        className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-[#0b591d] to-[#0f7024] text-white font-medium rounded-lg hover:from-[#0a4e1a] hover:to-[#0d5f20] transition-all duration-200"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Add New Property
+                      </button>
                     )}
+                  </div>
                 </div>
 
                 {/* Property Cards Grid - Show first 4 properties */}
