@@ -705,6 +705,8 @@ const handleAddProperty = () => {
             )}
           </div>
         </div>
+        {/* Footer outside the flex container */}
+        <Footer />
       </div>
 
       {/* Property Form Modal */}
@@ -742,9 +744,6 @@ const handleAddProperty = () => {
         currentTier={user?.subscription_tier || 'free'}
         reason={upgradeReason}
       />
-    </div>
-    {/* Footer outside the flex container */}
-    <Footer />
   </div>
   );
 }
