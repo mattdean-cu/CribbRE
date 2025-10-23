@@ -45,29 +45,30 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
 
   // Populate form if editing existing property
   useEffect(() => {
-    if (property) {
-      setFormData({
-        name: property.name,
-        address: property.address,
-        property_type: property.property_type,
-        purchase_date: property.purchase_date || '',
-        purchase_price: property.purchase_price,
-        current_value: property.current_value,
-        square_footage: property.square_footage,
-        bedrooms: property.bedrooms,
-        bathrooms: property.bathrooms,
-        is_primary_residence: property.is_primary_residence,
-        portfolio_id: property.portfolio_id,
-        monthly_rent: property.financials?.monthly_rent,
-        monthly_expenses: property.financials?.monthly_expenses,
-        property_taxes: property.financials?.property_taxes,
-        insurance: property.financials?.insurance,
-        hoa_fees: property.financials?.hoa_fees,
-        maintenance_costs: property.financials?.maintenance_costs,
-        vacancy_rate: property.financials?.vacancy_rate ? property.financials.vacancy_rate * 100 : undefined,
-      });
-    }
-  }, [property]);
+      if (property) {
+        setFormData({
+          id: property.id,
+          name: property.name || '',
+          address: property.address || '',
+          property_type: property.property_type || '',
+          purchase_date: property.purchase_date || '',
+          purchase_price: property.purchase_price ? Math.round(property.purchase_price * 100) / 100 : undefined,
+          current_value: property.current_value ? Math.round(property.current_value * 100) / 100 : undefined,
+          square_footage: property.square_footage ? Math.round(property.square_footage) : undefined,
+          bedrooms: property.bedrooms || undefined,
+          bathrooms: property.bathrooms ? Math.round(property.bathrooms * 10) / 10 : undefined,
+          is_primary_residence: property.is_primary_residence || false,
+          portfolio_id: property.portfolio_id || null,
+          monthly_rent: property.financials?.monthly_rent ? Math.round(property.financials.monthly_rent * 100) / 100 : undefined,
+          monthly_expenses: property.financials?.monthly_expenses ? Math.round(property.financials.monthly_expenses * 100) / 100 : undefined,
+          property_taxes: property.financials?.property_taxes ? Math.round(property.financials.property_taxes * 100) / 100 : undefined,
+          insurance: property.financials?.insurance ? Math.round(property.financials.insurance * 100) / 100 : undefined,
+          hoa_fees: property.financials?.hoa_fees ? Math.round(property.financials.hoa_fees * 100) / 100 : undefined,
+          maintenance_costs: property.financials?.maintenance_costs ? Math.round(property.financials.maintenance_costs * 100) / 100 : undefined,
+          vacancy_rate: property.financials?.vacancy_rate ? Math.round(property.financials.vacancy_rate * 100) / 100 : undefined
+        });
+      }
+    }, [property]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value, type } = e.target;
