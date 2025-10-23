@@ -44,7 +44,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
   }, [fetchPortfolios]);
 
   // Populate form if editing existing property
-  useEffect(() => {
+    useEffect(() => {
       if (property) {
         setFormData({
           id: property.id,
@@ -52,20 +52,20 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
           address: property.address || '',
           property_type: property.property_type || '',
           purchase_date: property.purchase_date || '',
-          purchase_price: property.purchase_price ? Math.round(property.purchase_price * 100) / 100 : undefined,
-          current_value: property.current_value ? Math.round(property.current_value * 100) / 100 : undefined,
-          square_footage: property.square_footage ? Math.round(property.square_footage) : undefined,
-          bedrooms: property.bedrooms || undefined,
-          bathrooms: property.bathrooms ? Math.round(property.bathrooms * 10) / 10 : undefined,
+          purchase_price: property.purchase_price ? Math.round(property.purchase_price * 100) / 100 : 0,
+          current_value: property.current_value ? Math.round(property.current_value * 100) / 100 : 0,
+          square_footage: property.square_footage ? Math.round(property.square_footage) : 0,
+          bedrooms: property.bedrooms || 0,
+          bathrooms: property.bathrooms ? Math.round(property.bathrooms * 10) / 10 : 0,
           is_primary_residence: property.is_primary_residence || false,
           portfolio_id: property.portfolio_id || null,
-          monthly_rent: property.financials?.monthly_rent ? Math.round(property.financials.monthly_rent * 100) / 100 : undefined,
-          monthly_expenses: property.financials?.monthly_expenses ? Math.round(property.financials.monthly_expenses * 100) / 100 : undefined,
-          property_taxes: property.financials?.property_taxes ? Math.round(property.financials.property_taxes * 100) / 100 : undefined,
-          insurance: property.financials?.insurance ? Math.round(property.financials.insurance * 100) / 100 : undefined,
-          hoa_fees: property.financials?.hoa_fees ? Math.round(property.financials.hoa_fees * 100) / 100 : undefined,
-          maintenance_costs: property.financials?.maintenance_costs ? Math.round(property.financials.maintenance_costs * 100) / 100 : undefined,
-          vacancy_rate: property.financials?.vacancy_rate ? Math.round(property.financials.vacancy_rate * 100) / 100 : undefined
+          monthly_rent: property.financials?.monthly_rent ? Math.round(property.financials.monthly_rent * 100) / 100 : 0,
+          monthly_expenses: property.financials?.monthly_expenses ? Math.round(property.financials.monthly_expenses * 100) / 100 : 0,
+          property_taxes: property.financials?.property_taxes ? Math.round(property.financials.property_taxes * 100) / 100 : 0,
+          insurance: property.financials?.insurance ? Math.round(property.financials.insurance * 100) / 100 : 0,
+          hoa_fees: property.financials?.hoa_fees ? Math.round(property.financials.hoa_fees * 100) / 100 : 0,
+          maintenance_costs: property.financials?.maintenance_costs ? Math.round(property.financials.maintenance_costs * 100) / 100 : 0,
+          vacancy_rate: property.financials?.vacancy_rate ? Math.round(property.financials.vacancy_rate * 100) / 100 : 0
         });
       }
     }, [property]);
