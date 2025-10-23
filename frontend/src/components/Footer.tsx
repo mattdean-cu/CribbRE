@@ -6,7 +6,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
           <p className="text-sm text-gray-500">
-            © {new Date().getFullYear()} Cribb Real Estate Management LLC. All rights reserved.
+            &copy; {new Date().getFullYear()} Cribb Real Estate Management LLC. All rights reserved.
           </p>
           <div className="flex space-x-6">
 
