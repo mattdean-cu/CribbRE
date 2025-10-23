@@ -105,7 +105,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
             throw new Error('No authentication token');
           }
 
-          const response = await fetch(`${API_BASE_URL}/portfolios?include_default=true`, {
+          const response = await fetch(`${API_BASE_URL}/portfolios/?include_default=true`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
@@ -140,7 +140,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
             throw new Error('No authentication token');
           }
 
-          const response = await fetch(`${API_BASE_URL}/portfolios`, {
+          const response = await fetch(`${API_BASE_URL}/portfolios/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -181,7 +181,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
             throw new Error('No authentication token');
           }
 
-          const response = await fetch(`${API_BASE_URL}/portfolios/${id}`, {
+          const response = await fetch(`${API_BASE_URL}/portfolios/${id}/`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -236,7 +236,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
           }
 
           const params = movePropertiesTo ? `?move_properties_to=${movePropertiesTo}` : '';
-          const response = await fetch(`${API_BASE_URL}/portfolios/${id}${params}`, {
+          const response = await fetch(`${API_BASE_URL}/portfolios/${id}/${params}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -279,7 +279,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
             throw new Error('No authentication token');
           }
 
-          const response = await fetch(`${API_BASE_URL}/portfolios/${portfolioId}/properties/${propertyId}`, {
+          const response = await fetch(`${API_BASE_URL}/portfolios/${portfolioId}/properties/${propertyId}/`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -310,7 +310,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
             throw new Error('No authentication token');
           }
 
-          const response = await fetch(`${API_BASE_URL}/portfolios/${id}`, {
+          const response = await fetch(`${API_BASE_URL}/portfolios/${id}/`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
@@ -349,7 +349,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
             throw new Error('No authentication token');
           }
 
-          const response = await fetch(`${API_BASE_URL}/portfolios/initialize`, {
+          const response = await fetch(`${API_BASE_URL}/portfolios/initialize/`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
