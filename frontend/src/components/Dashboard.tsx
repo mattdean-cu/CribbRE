@@ -742,9 +742,9 @@ const handleAddProperty = () => {
         currentTier={user?.subscription_tier || 'free'}
         reason={upgradeReason}
       />
-
     </div>
-    {/* Add Footer here */}
+    {/* Footer outside the flex container */}
     <Footer />
+  </div>
   );
 }
