@@ -77,12 +77,12 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
         [name]: type === 'checkbox'
           ? (e.target as HTMLInputElement).checked
           : type === 'number'
-            ? (value === '' ? undefined : Math.round(parseFloat(value) * 100) / 100) // Round to 2 decimals
+            ? (value === '' ? undefined : Math.round(parseFloat(value) * 100) / 100)
             : name === 'portfolio_id'
               ? (value === '' ? null : parseInt(value))
               : value
       }));
-    };
+  };
 
   const validateStep = (step: number): boolean => {
     switch (step) {
@@ -485,7 +485,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
                     onChange={handleInputChange}
                     min="0"
                     max="100"
-                    step="0.1"
+                    step="0.01"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="5"
                   />
