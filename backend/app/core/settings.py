@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # JWT Authentication
     SECRET_KEY: str = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production-make-it-long-and-random")
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 
     # Frontend URL for CORS and email links
