@@ -70,16 +70,19 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
   }, [property]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+      const { name, value, type } = e.target;
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked
-              : type === 'number' ? (value === '' ? undefined : parseFloat(value))
-              : name === 'portfolio_id' ? (value === '' ? null : parseInt(value))
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox'
+          ? (e.target as HTMLInputElement).checked
+          : type === 'number'
+            ? (value === '' ? undefined : Math.round(parseFloat(value) * 100) / 100) // Round to 2 decimals
+            : name === 'portfolio_id'
+              ? (value === '' ? null : parseInt(value))
               : value
-    }));
-  };
+      }));
+    };
 
   const validateStep = (step: number): boolean => {
     switch (step) {
