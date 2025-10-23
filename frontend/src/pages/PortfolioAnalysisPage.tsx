@@ -19,6 +19,7 @@ import {
   Area,
   AreaChart
 } from 'recharts';
+import { Footer } from '../components/Footer';
 
 const PortfolioAnalysisPage: React.FC = () => {
   const navigate = useNavigate();
@@ -830,6 +831,8 @@ const PortfolioAnalysisPage: React.FC = () => {
           </div>
         )}
       </div>
+      {/* Add Footer here */}
+      <Footer />
     </div>
   );
 };

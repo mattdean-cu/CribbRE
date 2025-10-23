@@ -235,7 +235,31 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 </p>
               )}
             </div>
+            {/* Privacy Policy Checkbox */}
+            <div className="flex items-start">
+              <div className="flex items-center h-5">
+                <input
+                  id="privacy-policy"
+                  name="privacy-policy"
+                  type="checkbox"
+                  required
+                  className="h-4 w-4 text-[#0b591d] focus:ring-[#0b591d] border-gray-300 rounded"
+                />
+              </div>
+              <div className="ml-3 text-sm">
+                <label htmlFor="privacy-policy" className="text-gray-700">
+                  I agree to the{' '}
 
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-[#0b591d] hover:text-[#0f7024] underline"
+                  >
+                    Privacy Policy
+                  </a>
+                </label>
+              </div>
+            </div>
             <button
               type="submit"
               disabled={isLoading || !isFormValid}

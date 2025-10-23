@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Trash2, MapPin, Calendar, Home } from 'lucide-react';
 import PropertyFinancialMetrics from '../components/properties/PropertyFinancialMetrics';
 import { usePropertyStore, PropertyWithFinancials } from '../store/propertyStore';
+import { Footer } from '../components/Footer';
 
 const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -237,6 +238,8 @@ const PropertyDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* Add Footer here */}
+      <Footer />
     </div>
   );
 };

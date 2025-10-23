@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { AddExistingPropertyModal } from './portfolios/AddExistingPropertyModal';
 import { getTierLimits, canAddProperty } from '../utils/subscriptionLimits';
 import { UpgradeModal } from './UpgradeModal';
+import { Footer } from './Footer';
 
 export function Dashboard() {
   const { user, logout } = useAuthStore();
@@ -741,6 +742,8 @@ const handleAddProperty = () => {
         currentTier={user?.subscription_tier || 'free'}
         reason={upgradeReason}
       />
+    {/* Add Footer here */}
+      <Footer />
     </div>
   );
 }

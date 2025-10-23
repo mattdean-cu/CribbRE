@@ -10,6 +10,7 @@ import PropertyDetailPage from './pages/PropertyDetailPage';
 import PortfolioAnalysisPage from './pages/PortfolioAnalysisPage';
 import { PricingPage } from './pages/PricingPage';
 import { useAuthStore } from './store/authStore';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 //Main App
 function App() {
@@ -59,6 +60,9 @@ function App() {
 
         {/* Pricing Page - accessible to both logged in and logged out users */}
         <Route path="/pricing" element={<PricingPage />} />
+
+        {/* Privacy Policy - accessible to everyone */}
+        <Route path="/privacy" element={<PrivacyPolicy />} />
 
         {/* Protected Routes */}
         <Route

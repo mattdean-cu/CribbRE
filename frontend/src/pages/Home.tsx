@@ -683,9 +683,9 @@ export function Home() {
                       © 2025 Cribb Real Estate Management. All rights reserved.
                     </p>
                     <div className="flex space-x-6 mt-4 md:mt-0">
-                      <button onClick={() => navigate('/login')} className="text-green-100 hover:text-white text-sm transition-colors">
+                      <a href="/privacy" className="text-gray-600 hover:text-gray-900">
                         Privacy Policy
-                      </button>
+                      </a>
                       <button onClick={() => navigate('/login')} className="text-green-100 hover:text-white text-sm transition-colors">
                         Terms of Service
                       </button>
