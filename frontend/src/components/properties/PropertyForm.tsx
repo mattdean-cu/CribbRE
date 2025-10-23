@@ -44,10 +44,9 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
   }, [fetchPortfolios]);
 
   // Populate form if editing existing property
-    useEffect(() => {
+  useEffect(() => {
       if (property) {
         setFormData({
-          id: property.id,
           name: property.name || '',
           address: property.address || '',
           property_type: property.property_type || '',
@@ -68,7 +67,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
           vacancy_rate: property.financials?.vacancy_rate ? Math.round(property.financials.vacancy_rate * 100) / 100 : 0
         });
       }
-    }, [property]);
+  }, [property]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value, type } = e.target;
