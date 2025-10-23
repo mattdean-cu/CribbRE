@@ -1,0 +1,59 @@
+# Root .gitignore for CribbRE project
+# Place this at: CribbRE/.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+env/
+ENV/
+*.db
+*.sqlite
+*.sqlite3
+
+# Node/JavaScript
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Build outputs
+build/
+dist/
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+coverage/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
