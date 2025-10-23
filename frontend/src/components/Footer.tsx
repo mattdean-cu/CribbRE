@@ -9,19 +9,19 @@ export function Footer() {
             &copy; {new Date().getFullYear()} Cribb Real Estate Management LLC. All rights reserved.
           </p>
           <div className="flex space-x-6">
-
+            <a
               href="/privacy"
               className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               Privacy Policy
             </a>
-
+            <a
               href="/terms"
               className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >
               Terms of Service
             </a>
-
+            <a
               href="mailto:help.cribbre@gmail.com"
               className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
             >

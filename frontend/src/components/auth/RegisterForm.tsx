@@ -248,7 +248,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               </div>
               <div className="ml-3 text-sm">
                 <label htmlFor="privacy-policy" className="text-gray-700">
-                  I agree to the{' '}
+                  I agree to the{' '} <a
 
                     href="/privacy"
                     target="_blank"
