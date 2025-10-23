@@ -11,6 +11,7 @@ import PortfolioAnalysisPage from './pages/PortfolioAnalysisPage';
 import { PricingPage } from './pages/PricingPage';
 import { useAuthStore } from './store/authStore';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 //Main App
 function App() {
@@ -63,6 +64,9 @@ function App() {
 
         {/* Privacy Policy - accessible to everyone */}
         <Route path="/privacy" element={<PrivacyPolicy />} />
+
+        {/* Terms of Service - accessible to everyone */}
+        <Route path="/terms" element={<TermsOfService />} />
 
         {/* Protected Routes */}
         <Route
