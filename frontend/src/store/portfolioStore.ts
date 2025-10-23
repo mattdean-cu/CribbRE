@@ -5,7 +5,7 @@ import { useAuthStore } from './authStore';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
 console.log('Portfolio API URL:', API_BASE_URL);
-
+// f
 // Types
 interface PortfolioMetrics {
   property_count: number;
