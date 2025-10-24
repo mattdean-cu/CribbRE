@@ -61,7 +61,7 @@ class PropertyService:
             hoa_fees=financial_input['hoa_fees'],
             maintenance_costs=financial_input['maintenance_costs'],
             other_expenses=financial_input['other_expenses'],
-            monthly_mortgage=financial_input['mortgage_payment'],
+            mortgage_payment=financial_input['mortgage_payment'],
             vacancy_rate=financial_input['vacancy_rate'],
             # Calculated metrics
             cap_rate=metrics['cap_rate'],
@@ -165,7 +165,7 @@ class PropertyService:
             'hoa_fees': property_obj.financials.hoa_fees or 0,
             'maintenance_costs': property_obj.financials.maintenance_costs or 0,
             'other_expenses': property_obj.financials.other_expenses or 0,
-            'mortgage_payment': property_obj.financials.monthly_mortgage or 0,
+            'mortgage_payment': property_obj.financials.mortgage_payment or 0,
             'current_value': property_obj.current_value or 0,
             'down_payment': property_obj.down_payment or 0,
             'vacancy_rate': property_obj.financials.vacancy_rate or 0.05

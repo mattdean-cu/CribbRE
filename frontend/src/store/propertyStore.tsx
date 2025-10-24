@@ -26,7 +26,7 @@ export interface PropertyFinancials {
   insurance?: number;
   hoa_fees?: number;
   maintenance_costs?: number;
-  monthly_mortgage?: number;
+  mortgage_payment?: number;
   vacancy_rate?: number;
   cap_rate?: number;
   cash_flow?: number;

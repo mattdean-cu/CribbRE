@@ -65,7 +65,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
           insurance: property.financials?.insurance ? Math.round(property.financials.insurance * 100) / 100 : 0,
           hoa_fees: property.financials?.hoa_fees ? Math.round(property.financials.hoa_fees * 100) / 100 : 0,
           maintenance_costs: property.financials?.maintenance_costs ? Math.round(property.financials.maintenance_costs * 100) / 100 : 0,
-          mortgage_payment: property.financials?.monthly_mortgage ? Math.round(property.financials.monthly_mortgage * 100) / 100 : 0,
+          mortgage_payment: property.financials?.mortgage_payment ? Math.round(property.financials.mortgage_payment * 100) / 100 : 0,
           vacancy_rate: property.financials?.vacancy_rate ? Math.round(property.financials.vacancy_rate * 100) : 0
         });
       }

@@ -125,7 +125,7 @@ class PropertyFinancials(Base):
     other_monthly_income = Column(Float, default=0)  # Parking, laundry, etc.
 
     # Monthly Expenses
-    monthly_mortgage = Column(Float, default=0)
+    mortgage_payment = Column(Float, default=0)
     property_taxes = Column(Float, default=0)  # Monthly amount
     insurance = Column(Float, default=0)  # Monthly amount
     hoa_fees = Column(Float, default=0)
