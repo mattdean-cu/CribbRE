@@ -236,7 +236,7 @@ export const usePortfolioStore = create<PortfolioStore>()(
           }
 
           const params = movePropertiesTo ? `?move_properties_to=${movePropertiesTo}` : '';
-          const response = await fetch(`${API_BASE_URL}/portfolios/${id}/${params}`, {
+          const response = await fetch(`${API_BASE_URL}/portfolios/${id}${params}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,
