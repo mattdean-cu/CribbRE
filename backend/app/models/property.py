@@ -171,7 +171,7 @@ class PropertyFinancials(Base):
     def get_total_monthly_expenses(self):
         """Calculate total monthly expenses"""
         expenses = [
-            self.monthly_mortgage, self.property_taxes, self.insurance,
+            self.mortgage_payment, self.property_taxes, self.insurance,
             self.hoa_fees, self.maintenance_costs, self.property_management,
             self.utilities, self.other_expenses
         ]
@@ -184,5 +184,5 @@ class PropertyFinancials(Base):
     def get_annual_noi(self):
         """Calculate Net Operating Income (excluding mortgage)"""
         income = self.get_total_monthly_income() * 12
-        expenses_without_mortgage = self.get_total_monthly_expenses() - (self.monthly_mortgage or 0)
+        expenses_without_mortgage = self.get_total_monthly_expenses() - (self.mortgage_payment or 0)
         return income - (expenses_without_mortgage * 12)
