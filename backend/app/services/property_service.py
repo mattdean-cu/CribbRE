@@ -149,7 +149,7 @@ class PropertyService:
             'hoa_fees': 'hoa_fees',
             'maintenance_costs': 'maintenance_costs',
             'monthly_expenses': 'other_expenses',  # Maps to other_expenses in DB
-            'mortgage_payment': 'monthly_mortgage',  # Maps to monthly_mortgage in DB
+            'mortgage_payment': 'mortgage_payment',  # Maps to monthly_mortgage in DB
             'vacancy_rate': 'vacancy_rate'
         }
 
