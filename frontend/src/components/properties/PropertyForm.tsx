@@ -32,7 +32,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
     insurance: undefined,
     hoa_fees: undefined,
     maintenance_costs: undefined,
-    mortgage_payment: undefined
+    mortgage_payment: undefined,
     vacancy_rate: undefined,
   });
 
