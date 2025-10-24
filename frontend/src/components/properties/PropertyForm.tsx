@@ -32,6 +32,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
     insurance: undefined,
     hoa_fees: undefined,
     maintenance_costs: undefined,
+    mortgage_payment: undefined
     vacancy_rate: undefined,
   });
 
@@ -64,6 +65,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
           insurance: property.financials?.insurance ? Math.round(property.financials.insurance * 100) / 100 : 0,
           hoa_fees: property.financials?.hoa_fees ? Math.round(property.financials.hoa_fees * 100) / 100 : 0,
           maintenance_costs: property.financials?.maintenance_costs ? Math.round(property.financials.maintenance_costs * 100) / 100 : 0,
+          mortgage_payment: property.financials?.mortgage_payment ? Math.round(property.financials.mortgage_payment * 100) / 100 : 0,
           vacancy_rate: property.financials?.vacancy_rate ? Math.round(property.financials.vacancy_rate * 100) : 0
         });
       }
@@ -367,6 +369,24 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
                 </div>
 
                 <div>
+                  <label htmlFor="mortgage_payment" className="block text-sm font-medium text-gray-700 mb-2">
+                    Monthly Mortgage Payment (P&I)
+                  </label>
+                  <input
+                    id="mortgage_payment"
+                    name="mortgage_payment"
+                    type="number"
+                    value={formData.mortgage_payment || ''}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="1500"
+                  />
+                  <p className="mt-1 text-sm text-gray-500">Principal + Interest payment (optional)</p>
+                </div>
+
+                <div>
                   <label htmlFor="square_footage" className="block text-sm font-medium text-gray-700 mb-2">
                     Square Footage
                   </label>
@@ -588,7 +608,7 @@ export function PropertyForm({ property, onSuccess, onCancel, isModal = false }:
                     <div>
                       <span className="text-green-700">Est. Monthly Expenses:</span>
                       <p className="font-semibold text-green-900">
-                        {formatCurrency((formData.property_taxes || 0) + (formData.insurance || 0) + (formData.hoa_fees || 0) + (formData.maintenance_costs || 0) + (formData.monthly_expenses || 0))}
+                        {formatCurrency((formData.property_taxes || 0) + (formData.insurance || 0) + (formData.hoa_fees || 0) + (formData.maintenance_costs || 0) + (formData.monthly_expenses || 0) + (formData.mortgage_payment || 0))}
                       </p>
                     </div>
                   </div>

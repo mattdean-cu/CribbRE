@@ -9,10 +9,12 @@ from pydantic import BaseModel, Field, ConfigDict
 class PropertyFinancialsBase(BaseModel):
     """Base schema for property financials"""
     monthly_rent: Optional[float] = Field(default=0, ge=0, description="Monthly rental income")
-    property_taxes: Optional[float] = Field(default=0, ge=0, description="Annual property taxes")
-    insurance: Optional[float] = Field(default=0, ge=0, description="Annual insurance cost")
+    property_taxes: Optional[float] = Field(default=0, ge=0, description="Monthly property taxes")
+    insurance: Optional[float] = Field(default=0, ge=0, description="Monthly insurance cost")
     hoa_fees: Optional[float] = Field(default=0, ge=0, description="Monthly HOA fees")
     maintenance_costs: Optional[float] = Field(default=0, ge=0, description="Monthly maintenance costs")
+    monthly_expenses: Optional[float] = Field(default=0, ge=0, description="Other monthly expenses")
+    mortgage_payment: Optional[float] = Field(default=0, ge=0, description="Monthly mortgage payment (P&I)")
     vacancy_rate: Optional[float] = Field(default=0.05, ge=0, le=1, description="Vacancy rate (0-1)")
 
 
@@ -43,7 +45,7 @@ class PropertyBase(BaseModel):
 class PropertyCreate(PropertyBase, PropertyFinancialsBase):
     """Schema for creating a property"""
     down_payment: Optional[float] = Field(default=0, ge=0, description="Down payment amount")
-    portfolio_id: Optional[int] = Field(default=None, description="Portfolio/folder ID")  # Add this line
+    portfolio_id: Optional[int] = Field(default=None, description="Portfolio/folder ID")
 
     class Config:
         json_schema_extra = {
@@ -57,8 +59,12 @@ class PropertyCreate(PropertyBase, PropertyFinancialsBase):
                 "bedrooms": 3,
                 "bathrooms": 2,
                 "monthly_rent": 2500,
-                "property_taxes": 3000,
-                "insurance": 1200,
+                "property_taxes": 250,
+                "insurance": 100,
+                "hoa_fees": 50,
+                "maintenance_costs": 200,
+                "monthly_expenses": 100,
+                "mortgage_payment": 1500,
                 "down_payment": 60000,
                 "is_primary_residence": False,
                 "portfolio_id": None
@@ -78,7 +84,7 @@ class PropertyUpdate(BaseModel):
     bedrooms: Optional[int] = Field(default=None, ge=0)
     bathrooms: Optional[float] = Field(default=None, ge=0)
     is_primary_residence: Optional[bool] = Field(default=None)
-    portfolio_id: Optional[int] = Field(default=None, description="Portfolio/folder ID")  # Add this line
+    portfolio_id: Optional[int] = Field(default=None, description="Portfolio/folder ID")
 
     # Financial fields
     monthly_rent: Optional[float] = Field(default=None, ge=0)
@@ -86,8 +92,11 @@ class PropertyUpdate(BaseModel):
     insurance: Optional[float] = Field(default=None, ge=0)
     hoa_fees: Optional[float] = Field(default=None, ge=0)
     maintenance_costs: Optional[float] = Field(default=None, ge=0)
+    monthly_expenses: Optional[float] = Field(default=None, ge=0)
+    mortgage_payment: Optional[float] = Field(default=None, ge=0)
     vacancy_rate: Optional[float] = Field(default=None, ge=0, le=1)
     down_payment: Optional[float] = Field(default=None, ge=0)
+
 
 class PropertyResponse(PropertyBase):
     """Schema for property responses"""
@@ -96,6 +105,7 @@ class PropertyResponse(PropertyBase):
     portfolio_id: Optional[int] = None
     financials: Optional[PropertyFinancialsResponse] = None
     model_config = ConfigDict(from_attributes=True)
+
 
 # Property type enum for validation
 PROPERTY_TYPES = [

@@ -26,6 +26,7 @@ export interface PropertyFinancials {
   insurance?: number;
   hoa_fees?: number;
   maintenance_costs?: number;
+  mortgage_payment?: number;  // Added
   vacancy_rate?: number;
   cap_rate?: number;
   cash_flow?: number;
@@ -33,7 +34,7 @@ export interface PropertyFinancials {
 }
 
 export interface PropertyWithFinancials extends Property {
-  portfolio_id?: number;  // Add this line
+  portfolio_id?: number;
   financials?: PropertyFinancials;
   monthly_cash_flow?: number;
   cap_rate?: number;
@@ -59,6 +60,7 @@ export interface PropertyCreate {
   insurance?: number;
   hoa_fees?: number;
   maintenance_costs?: number;
+  mortgage_payment?: number;  // Added
   vacancy_rate?: number;
 }
 
