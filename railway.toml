@@ -1,11 +1,12 @@
 # railway.toml
-# Place this file in /backend folder (NOT in root)
+# Place this file in ROOT folder
 
 [build]
 builder = "NIXPACKS"
+nixpacksConfigPath = "backend"
 
 [deploy]
-startCommand = "chmod +x start.sh && ./start.sh"
+startCommand = "cd backend && chmod +x start.sh && ./start.sh"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
