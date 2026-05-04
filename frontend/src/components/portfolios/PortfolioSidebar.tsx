@@ -61,16 +61,6 @@ export function PortfolioSidebar({
     }
   };
 
-  const toggleFolder = (portfolioId: number) => {
-    const newExpanded = new Set(expandedFolders);
-    if (newExpanded.has(portfolioId)) {
-      newExpanded.delete(portfolioId);
-    } else {
-      newExpanded.add(portfolioId);
-    }
-    setExpandedFolders(newExpanded);
-  };
-
   const getFolderIcon = (iconName: string, isSelected: boolean) => {
     const iconClass = `w-5 h-5 ${isSelected ? 'text-white' : 'text-[#0b591d]'}`;
 

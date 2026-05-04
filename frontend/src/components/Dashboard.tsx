@@ -23,7 +23,6 @@ export function Dashboard() {
     updateProperty,
     isLoading,
     error,
-    setSelectedProperty
   } = usePropertyStore();
 
   const { portfolios, movePropertyToPortfolio, fetchPortfolios } = usePortfolioStore();
@@ -114,10 +113,6 @@ const handleAddProperty = () => {
   const handlePropertyFormCancel = () => {
     setShowPropertyForm(false);
     setEditingProperty(null);
-  };
-
-  const handleRunAnalysis = () => {
-    navigate('/portfolio/analysis');
   };
 
   const handleSelectPortfolio = (portfolioId: number | null) => {

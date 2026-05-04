@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Trash2, MapPin, Calendar, Home } from 'lucide-react';
 import PropertyFinancialMetrics from '../components/properties/PropertyFinancialMetrics';
-import { usePropertyStore, PropertyWithFinancials } from '../store/propertyStore';
+import { usePropertyStore } from '../store/propertyStore';
 import { Footer } from '../components/Footer';
 
 const PropertyDetailPage: React.FC = () => {

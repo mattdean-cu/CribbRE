@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Percent, BarChart3, PieChart, Calculator, Target } from 'lucide-react';
-import { usePropertyStore, PropertyWithFinancials } from '../store/propertyStore';
+import { usePropertyStore } from '../store/propertyStore';
 import {
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -49,14 +47,6 @@ const PortfolioAnalysisPage: React.FC = () => {
 
   const formatPercentage = (rate: number) => {
     return `${rate.toFixed(2)}%`;
-  };
-
-  // Chart color scheme - Using your theme colors
-  const COLORS = ['#0b591d', '#0f7024', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
-
-  // Custom tooltip formatter for currency
-  const formatTooltipCurrency = (value: number) => {
-    return formatCurrency(value);
   };
 
   // Calculate portfolio metrics
@@ -106,7 +96,7 @@ const PortfolioAnalysisPage: React.FC = () => {
       grossRentMultiplier: totalValue > 0 ? totalValue / (totalMonthlyRent * 12) : 0,
       cashOnCashReturn: totalPurchasePrice > 0 ? (totalMonthlyCashFlow * 12 / totalPurchasePrice) * 100 : 0,
     };
-  }, [displayProperties]);
+  }, [displayProperties, properties]);
 
   // Performance insights
   const insights = React.useMemo(() => {
@@ -227,8 +217,6 @@ const PortfolioAnalysisPage: React.FC = () => {
       '30yr': 360
     };
 
-    const periods = timeframePeriods[timeframe];
-    const monthlyGrowthRate = 0.003; // 0.3% monthly = ~3.6% annually
     const baseValue = portfolioMetrics.totalValue || 0;
     const monthlyCashFlow = portfolioMetrics.totalMonthlyCashFlow || 0;
 
@@ -293,7 +281,6 @@ const PortfolioAnalysisPage: React.FC = () => {
       const portfolioValue = Math.max(0, baseValue * appreciationMultiplier);
 
       // Calculate cumulative cash flow with rent growth over time
-      const currentMonthlyCashFlow = monthlyCashFlow * rentGrowthMultiplier;
       const cumulativeCashFlow = monthlyCashFlow * (rentGrowthMultiplier - 1) / rentGrowthRate;
 
       // Total net worth
