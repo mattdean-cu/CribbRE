@@ -208,15 +208,6 @@ const PortfolioAnalysisPage: React.FC = () => {
     }));
 
     // Portfolio value trend over time (FIXED)
-    const timeframePeriods = {
-      '1yr': 12,
-      '3yr': 36,
-      '5yr': 60,
-      '10yr': 120,
-      '20yr': 240,
-      '30yr': 360
-    };
-
     const baseValue = portfolioMetrics.totalValue || 0;
     const monthlyCashFlow = portfolioMetrics.totalMonthlyCashFlow || 0;
 

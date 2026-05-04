@@ -25,7 +25,7 @@ export function PortfolioSidebar({
 
   const { properties } = usePropertyStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [expandedFolders, setExpandedFolders] = useState<Set<number>>(new Set());
+  const [expandedFolders] = useState<Set<number>>(new Set());
 
   // Fetch portfolios when component mounts
   useEffect(() => {
