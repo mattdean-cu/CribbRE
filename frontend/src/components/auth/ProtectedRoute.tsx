@@ -11,11 +11,10 @@ export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
   const { isAuthenticated, token, getCurrentUser, isLoading } = useAuthStore();
 
   useEffect(() => {
-    // If we have a token but no user data, try to get current user
-    if (token && !isAuthenticated) {
+    if (token) {
       getCurrentUser();
     }
-  }, [token, isAuthenticated, getCurrentUser]);
+  }, [token, getCurrentUser]);
 
   // Show loading while checking authentication
   if (isLoading) {

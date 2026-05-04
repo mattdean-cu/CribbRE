@@ -169,6 +169,10 @@ export const useAuthStore = create<AuthState>()(
             console.log('Response status:', response.status);
 
             if (!response.ok) {
+              if (response.status === 401) {
+                get().logout();
+                return;
+              }
               const errorText = await response.text();
               console.error('Response error:', errorText);
               throw new Error('Failed to get user data');
