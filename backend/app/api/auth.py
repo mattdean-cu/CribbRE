@@ -1,10 +1,11 @@
 # app/api/auth.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, field_validator
 
 from app.core.database import get_db
+from app.core.limiter import limiter
 from app.auth.service import auth_service
 from app.models.user import User
 
@@ -65,7 +66,8 @@ async def get_current_user(
 
 
 @router.post("/register")
-async def register(user_data: UserRegister, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def register(request: Request, user_data: UserRegister, db: Session = Depends(get_db)):
     """Register a new user."""
     result = auth_service.create_user(
         db=db,
@@ -82,7 +84,8 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+async def login(request: Request, user_credentials: UserLogin, db: Session = Depends(get_db)):
     """Login user and return access token."""
     user = auth_service.authenticate_user(
         db=db,
